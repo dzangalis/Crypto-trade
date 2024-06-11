@@ -1,0 +1,20 @@
+{
+  "name": "dzangalis/crypto-api",
+  "autoload": {
+    "psr-4": {
+      "api\\": "api/"
+    }
+  },
+  "authors": [
+    {
+      "name": "dzangalis",
+      "email": "dzangalis@gmail.com"
+    }
+  ],
+  "require": {
+    "ext-json": "*",
+    "ext-ctype": "*",
+    "ext-readline": "*",
+    "symfony/console": "^5.4"
+  }
+}
