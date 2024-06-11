@@ -16,7 +16,7 @@ class Wallet
         list($this->wallet, $this->transactions) = $this->load();
     }
 
-    public function load()
+    public function load(): array
     {
         $wallet = file_exists('wallet.json') ? json_decode(file_get_contents('wallet.json'), true) : ['USD' => self::STARTING_BALANCE];
         if (!isset($wallet['USD'])) {
@@ -26,20 +26,29 @@ class Wallet
         return [$wallet, $transactions];
     }
 
-    private function save()
+    private function save(): void
     {
-        file_put_contents('wallet.json', json_encode($this->wallet));
+        $walletObject = (object) $this->wallet;
+        file_put_contents('wallet.json', json_encode($walletObject));
         file_put_contents('transactions.json', json_encode($this->transactions));
     }
 
-    public function buyCrypto($crypto, $amount)
+    public function buyCrypto(array $crypto, float $amount): void
     {
         $symbol = $crypto['symbol'];
         $price = $crypto['quote']['USD']['price'];
         $cost = $amount * $price;
 
-        echo "Available USD balance: {$this->wallet['USD']}\n";
-        echo "Cost of purchase: $cost\n";
+        $output = new ConsoleOutput();
+        $table = new Table($output);
+
+        $headers = [
+            '<fg=red;options=bold>Transaction</>',
+            '<fg=red;options=bold>Amount</>',
+            '<fg=red;options=bold>Symbol</>',
+            '<fg=red;options=bold>Cost</>'
+        ];
+        $table->setHeaders($headers);
 
         if ($this->wallet['USD'] >= $cost) {
             $this->wallet['USD'] -= $cost;
@@ -47,13 +56,19 @@ class Wallet
             $this->transactions[] = ['type' => 'buy', 'symbol' => $symbol, 'amount' => $amount, 'price' => $price];
             $this->save();
 
+            $table->addRow(['Buy', $amount, $symbol, '$' . $cost]);
+            $table->render();
+
             echo "Bought $amount $symbol for \$$cost\n";
         } else {
+            $table->addRow(['Failed Buy', $amount, $symbol, '$' . $cost]);
+            $table->render();
+
             echo "Insufficient funds\n";
         }
     }
 
-    public function sellCrypto($crypto, $amount)
+    public function sellCrypto(array $crypto, float $amount): void
     {
         $symbol = $crypto['symbol'];
 
@@ -74,26 +89,60 @@ class Wallet
         $this->transactions[] = ['type' => 'sell', 'symbol' => $symbol, 'amount' => $amount, 'price' => $price];
         $this->save();
 
+        // Display transaction details in a table
+        $output = new ConsoleOutput();
+        $table = new Table($output);
+        $headers = [
+            '<fg=red;options=bold>Transaction</>',
+            '<fg=red;options=bold>Amount</>',
+            '<fg=red;options=bold>Symbol</>',
+            '<fg=red;options=bold>Proceeds</>'
+        ];
+        $table->setHeaders($headers);
+        $table->addRow(['Sell', $amount, $symbol, '$' . $proceeds]);
+        $table->render();
+
         echo "Sold $amount $symbol for \$$proceeds\n";
     }
 
-    public function showWallet()
+    public function showWallet(): void
     {
-        echo "Wallet:\n";
+        $output = new ConsoleOutput();
+        $table = new Table($output);
+        $headers = [
+            '<fg=red;options=bold>Currency</>',
+            '<fg=red;options=bold>Amount</>'
+        ];
+        $table->setHeaders($headers);
+
         foreach ($this->wallet as $currency => $amount) {
-            echo "$currency: $amount\n";
+            $table->addRow([$currency, $amount]);
         }
+
+        $table->render();
     }
 
-    public function transactions()
+    public function transactions(): void
     {
-        echo "Transactions:\n";
-        foreach ($this->transactions as $records) {
-            echo "{$records['type']} {$records['amount']} {$records['symbol']} at \${$records['price']}\n";
+        $output = new ConsoleOutput();
+        $table = new Table($output);
+        $headers = [
+            '<fg=red;options=bold>Type</>',
+            '<fg=red;options=bold>Currency</>',
+            '<fg=red;options=bold>Amount</>',
+            '<fg=red;options=bold>Price</>'
+        ];
+        $table->setHeaders($headers);
+
+        foreach ($this->transactions as $transaction) {
+            $table->addRow([$transaction['type'], $transaction['symbol'], $transaction['amount'], $transaction['price']]);
         }
+
+        $table->render();
+
     }
 
-    public function showCommands()
+    public function showCommands(): void
     {
         {
             $output = new ConsoleOutput();

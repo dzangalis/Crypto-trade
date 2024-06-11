@@ -15,6 +15,7 @@
     "ext-json": "*",
     "ext-ctype": "*",
     "ext-readline": "*",
-    "symfony/console": "^5.4"
+    "symfony/console": "^5.4",
+    "ext-curl": "*"
   }
 }

@@ -17,22 +17,14 @@ while (true) {
         case '1':
 
             $apiClient = new APIClient();
-            $cryptos = $apiClient->topCryptos();
-            if ($cryptos !== null) {
-                foreach ($cryptos as $crypto) {
-                    echo "{$crypto['symbol']} ({$crypto['name']}) - \${$crypto['quote']['USD']['price']}\n";
-                }
-            }
+            $apiClient->topCryptos();
             break;
 
         case '2':
 
-            $apiClient = new APIClient();
             $symbol = strtoupper(readline("Enter cryptocurrency symbol: \n"));
-            $crypto = $apiClient->cryptoBySymbol($symbol);
-            if ($crypto !== null) {
-                echo "{$crypto['name']} ({$crypto['symbol']}) - \${$crypto['quote']['USD']['price']}\n";
-            }
+            $apiClient = new APIClient();
+            $apiClient->displayCryptoData($symbol);
             break;
 
         case '3':
@@ -50,7 +42,6 @@ while (true) {
 
             $apiClient = new APIClient();
             $symbol = strtoupper(readline("Enter cryptocurrency symbol: \n"));
-            echo "Enter amount to sell: ";
             $amount = floatval(readline("Enter amount to sell: \n"));
             $crypto = $apiClient->cryptoBySymbol($symbol);
             if ($crypto !== null) {

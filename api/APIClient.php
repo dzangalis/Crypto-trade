@@ -1,12 +1,15 @@
 <?php
 
 namespace api;
+
+use Symfony\Component\Console\Helper\Table;
+use Symfony\Component\Console\Output\ConsoleOutput;
 class APIClient
 {
     const API_URL = 'https://pro-api.coinmarketcap.com/v1/';
     const API_KEY = '9936a977-e516-446d-891c-788a396489df';
 
-    public function getApiData($endpoint, $params = [])
+    public function getApiData(string $endpoint, array $params = []): ?array
     {
         $url = self::API_URL . $endpoint . '?' . http_build_query($params);
         $headers = [
@@ -37,19 +40,75 @@ class APIClient
         return $data['data'];
     }
 
-    public function topCryptos($limit = 10)
+    public function topCryptos(int $limit = 10): void
     {
-        return $this->getApiData('cryptocurrency/listings/latest', ['limit' => $limit, 'convert' => 'USD']);
+        $cryptos = $this->getApiData('cryptocurrency/listings/latest', ['limit' => $limit, 'convert' => 'USD']);
+        if ($cryptos !== null) {
+            $output = new ConsoleOutput();
+            $table = new Table($output);
+            $headers = [
+                '<fg=red;options=bold>Rank</>',
+                '<fg=red;options=bold>Symbol</>',
+                '<fg=red;options=bold>Name</>',
+                '<fg=red;options=bold>Price (USD)</>'
+            ];
+            $table->setHeaders($headers);
+
+            foreach ($cryptos as $crypto) {
+                $table->addRow([
+                    $crypto['cmc_rank'],
+                    $crypto['symbol'],
+                    $crypto['name'],
+                    '$' . number_format($crypto['quote']['USD']['price'], 2),
+                ]);
+            }
+
+            $table->render();
+        } else {
+            echo "Failed to fetch cryptocurrency data.\n";
+        }
     }
 
-    public function cryptoBySymbol($symbol)
+    public function cryptoBySymbol(string $symbol): ?array
     {
-        $data = $this->getApiData('cryptocurrency/quotes/latest', ['symbol' => $symbol, 'convert' => 'USD']);
-        if (isset($data[$symbol])) {
+        $data = $this->getCryptoData($symbol);
+        if ($data !== null) {
             return $data[$symbol];
         } else {
-            echo "Error: Cryptocurrency not found\n";
+            echo "Failed to fetch cryptocurrency data for symbol $symbol.\n";
             return null;
         }
     }
+
+    public function displayCryptoData(string $symbol): void
+    {
+        $data = $this->getCryptoData($symbol);
+        if ($data !== null) {
+            $output = new ConsoleOutput();
+            $table = new Table($output);
+            $headers = [
+                '<fg=red;options=bold>Symbol</>',
+                '<fg=red;options=bold>Name</>',
+                '<fg=red;options=bold>Price (USD)</>'
+            ];
+            $table->setHeaders($headers);
+
+            $cryptoData = $data[$symbol];
+            $table->addRow([
+                $cryptoData['symbol'],
+                $cryptoData['name'],
+                '$' . number_format($cryptoData['quote']['USD']['price'], 2),
+            ]);
+
+            $table->render();
+        } else {
+            echo "Failed to fetch cryptocurrency data for symbol $symbol.\n";
+        }
+    }
+
+    private function getCryptoData(string $symbol): array
+    {
+        return $this->getApiData('cryptocurrency/quotes/latest', ['symbol' => $symbol, 'convert' => 'USD']);
+    }
+
 }
